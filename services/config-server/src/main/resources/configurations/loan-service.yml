@@ -14,8 +14,19 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+springdoc:
+  swagger-ui:
+    use-root-path: true
+
 server:
   port: 10060
+  forward-headers-strategy: framework
+
+eureka:
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+
 # Microservice URLs
 application:
   config:

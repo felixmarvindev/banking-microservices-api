@@ -32,8 +32,18 @@ spring:
       swagger-ui:
         enabled: true
 
+springdoc:
+  swagger-ui:
+    use-root-path: true
+
 server:
   port: 10070
+  forward-headers-strategy: framework
+
+eureka:
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
 
 logging:
   level:

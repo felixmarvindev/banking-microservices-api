@@ -20,13 +20,34 @@ public class SecurityConfig {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity serverHttpSecurity) {
         logger.info("SecurityConfig is being applied...");
         serverHttpSecurity
-           .csrf(ServerHttpSecurity.CsrfSpec::disable)
-            .authorizeExchange(exchange ->
-                exchange.pathMatchers("/eureka/**", "/api/v1/accounts/**", "/api/v1/loans/**",  "/api/v1/auth/**")
-                    .permitAll()
-                    .anyExchange()
-                    .authenticated())
-          .oauth2ResourceServer(spec -> spec.jwt(Customizer.withDefaults()));
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(exchange ->
+                        exchange.pathMatchers(
+                                        "/",
+                                        "/eureka/**",
+                                        "/api/v1/**",
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html",
+                                        "/swagger-aggregator.html",
+                                        "/v3/api-docs/**",
+                                        "/webjars/**",
+                                        "/actuator/**",
+                                        // Service-specific swagger routes
+                                        "/auth-service/swagger-ui/**",
+                                        "/auth-service/v3/api-docs/**",
+                                        "/account-service/swagger-ui/**",
+                                        "/account-service/v3/api-docs/**",
+                                        "/transaction-service/swagger-ui/**",
+                                        "/transaction-service/v3/api-docs/**",
+                                        "/loan-service/swagger-ui/**",
+                                        "/loan-service/v3/api-docs/**",
+                                        "/notification-service/swagger-ui/**",
+                                        "/notification-service/v3/api-docs/**"
+                                )
+                                .permitAll()
+                                .anyExchange()
+                                .authenticated())
+                .oauth2ResourceServer(spec -> spec.jwt(Customizer.withDefaults()));
         return serverHttpSecurity.build();
     }
 }

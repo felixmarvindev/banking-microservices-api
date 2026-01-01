@@ -1,5 +1,15 @@
+springdoc:
+  swagger-ui:
+    use-root-path: true
+
 server:
   port: 10050
+  forward-headers-strategy: framework
+
+eureka:
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
 
 spring:
   main:

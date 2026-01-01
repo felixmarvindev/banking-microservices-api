@@ -6,13 +6,20 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin@123
       PGDATA: /data/postgres
+      POSTGRES_DB: postgres
     volumes:
       - postgres:/data/postgres
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     ports:
       - "5432:5432"
     networks:
       - microservices-net
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.2
@@ -64,6 +71,8 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=password
+    networks:
+      - microservices-net
 
   mongo-express:
     image: mongo-express:0.54.0
@@ -77,6 +86,8 @@ services:
       - ME_CONFIG_MONGODB_SERVER=mongodb
     depends_on:
       - mongodb
+    networks:
+      - microservices-net
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -91,7 +102,7 @@ services:
       - microservices-net
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.4.0
     container_name: ms_kafka
     ports:
       - "9092:9092"
@@ -103,7 +114,9 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
     networks:
       - microservices-net
 
@@ -113,6 +126,207 @@ services:
     ports:
       - 1080:1080
       - 1025:1025
+    networks:
+      - microservices-net
+
+  # Infrastructure Services
+  discovery:
+    build:
+      context: ./services/discovery
+      dockerfile: Dockerfile
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  config-server:
+    build:
+      context: ./services/config-server
+      dockerfile: Dockerfile
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    depends_on:
+      - postgresql
+    environment:
+      - SPRING_PROFILES_ACTIVE=native
+
+  # Gateway Service
+  gateway:
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    ports:
+      - "8222:8222"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    depends_on:
+      - discovery
+      - config-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+
+  # Business Services
+  auth-service:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "10070:10070"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      discovery:
+        condition: service_started
+      config-server:
+        condition: service_started
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgresql:5432/auth
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=admin@123
+
+  account-service:
+    build:
+      context: ./services/account
+      dockerfile: Dockerfile
+    container_name: account-service
+    ports:
+      - "10080:10080"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      discovery:
+        condition: service_started
+      config-server:
+        condition: service_started
+      auth-service:
+        condition: service_started
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgresql:5432/account
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=admin@123
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+
+  transaction-service:
+    build:
+      context: ./services/transaction
+      dockerfile: Dockerfile
+    container_name: transaction-service
+    ports:
+      - "10090:10090"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      discovery:
+        condition: service_started
+      config-server:
+        condition: service_started
+      account-service:
+        condition: service_started
+      auth-service:
+        condition: service_started
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgresql:5432/transaction
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=admin@123
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+
+  loan-service:
+    build:
+      context: ./services/loan
+      dockerfile: Dockerfile
+    container_name: loan-service
+    ports:
+      - "10060:10060"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      discovery:
+        condition: service_started
+      config-server:
+        condition: service_started
+      account-service:
+        condition: service_started
+      auth-service:
+        condition: service_started
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgresql:5432/loan
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=admin@123
+
+  notification-service:
+    build:
+      context: ./services/notification
+      dockerfile: Dockerfile
+    container_name: notification-service
+    ports:
+      - "10050:10050"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      kafka:
+        condition: service_started
+      discovery:
+        condition: service_started
+      config-server:
+        condition: service_started
+      mail-dev:
+        condition: service_started
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgresql:5432/notification
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=admin@123
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_MAIL_HOST=mail-dev
+      - SPRING_MAIL_PORT=1025
 
 networks:
   microservices-net:

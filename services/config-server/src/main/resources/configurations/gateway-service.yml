@@ -23,6 +23,37 @@ spring:
           uri: lb:http://LOAN-SERVICE
           predicates:
             - Path=/api/v1/loans/**
+        # Swagger UI Routes
+        - id: auth-service-swagger
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/auth-service/swagger-ui/**,/auth-service/v3/api-docs/**
+          filters:
+            - RewritePath=/auth-service(?<segment>/?.*), ${segment}
+        - id: account-service-swagger
+          uri: lb://ACCOUNT-SERVICE
+          predicates:
+            - Path=/account-service/swagger-ui/**,/account-service/v3/api-docs/**
+          filters:
+            - RewritePath=/account-service(?<segment>/?.*), ${segment}
+        - id: transaction-service-swagger
+          uri: lb://TRANSACTION-SERVICE
+          predicates:
+            - Path=/transaction-service/swagger-ui/**,/transaction-service/v3/api-docs/**
+          filters:
+            - RewritePath=/transaction-service(?<segment>/?.*), ${segment}
+        - id: loan-service-swagger
+          uri: lb://LOAN-SERVICE
+          predicates:
+            - Path=/loan-service/swagger-ui/**,/loan-service/v3/api-docs/**
+          filters:
+            - RewritePath=/loan-service(?<segment>/?.*), ${segment}
+        - id: notification-service-swagger
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/notification-service/swagger-ui/**,/notification-service/v3/api-docs/**
+          filters:
+            - RewritePath=/notification-service(?<segment>/?.*), ${segment}
 management:
   tracing:
     sampling:

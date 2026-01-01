@@ -67,11 +67,24 @@ A modern, scalable online banking system built using a microservices architectur
 ---
 ## Running the Application
 
+### Quick Start (Docker)
+
 1. **Start the Services with Docker Compose**:
    ```bash
+   docker-compose build
    docker-compose up -d
+   ```
+
+   Or use the deployment script:
+   ```bash
+   chmod +x deploy.sh
+   ./deploy.sh
+   ```
 
 2. **Verify Services:**
+- **API Gateway**: `http://localhost:8222`
+- **Swagger Aggregator**: `http://localhost:8222/swagger-aggregator.html`
+- **Eureka Discovery**: `http://localhost:8761`
 - PostgreSQL: `localhost:5432`
 - Keycloak: `localhost:9098`
 - pgAdmin: `localhost:5050`
@@ -81,24 +94,43 @@ A modern, scalable online banking system built using a microservices architectur
 - Kafka: `localhost:9092`
 - Maildev: `localhost:1080` (UI), `localhost:1025` (SMTP)
 
-3.  Stop the Services
-```bash
-docker-compose down
+3. **Access Swagger UI**:
+   - Through Gateway: `http://localhost:8222/auth-service/swagger-ui/index.html`
+   - Direct access: `http://localhost:10070/swagger-ui/index.html` (Auth Service)
 
-```
+4. **Stop the Services**:
+   ```bash
+   docker-compose down
+   ```
+
+### VPS Deployment
+
+For production deployment on a VPS, see [DEPLOYMENT.md](DEPLOYMENT.md) for detailed step-by-step instructions.
+
+### Local Development
+
+For local development without Docker, see [QUICK_START.md](QUICK_START.md).
 ## Services
 ```markdown
-| Service            | Description                          | Port       |
-|--------------------|--------------------------------------|------------|
-| **PostgreSQL**     | Relational database for core data    | 5432       |
-| **Keycloak**       | Authentication and authorization     | 9098       |
-| **pgAdmin**        | PostgreSQL management UI             | 5050       |
-| **Zipkin**         | Distributed tracing                  | 9411       |
-| **MongoDB**        | NoSQL database for notifications     | 27017      |
-| **Mongo Express**  | MongoDB management UI                | 8081       |
-| **Zookeeper**      | Kafka coordination                   | 22181      |
-| **Kafka**          | Message broker                       | 9092       |
-| **Maildev**        | Email testing server                 | 1080, 1025 |
+| Service                | Description                          | Port       |
+|------------------------|--------------------------------------|------------|
+| **API Gateway**        | Central entry point                  | 8222       |
+| **Eureka Discovery**   | Service registry                     | 8761       |
+| **Config Server**      | Configuration management             | 8888       |
+| **Auth Service**       | Authentication & Authorization       | 10070      |
+| **Account Service**    | Account management                   | 10080      |
+| **Transaction Service**| Transaction processing               | 10090      |
+| **Loan Service**       | Loan management                      | 10060      |
+| **Notification Service**| Notifications                        | 10050      |
+| **PostgreSQL**         | Relational database for core data    | 5432       |
+| **Keycloak**           | Authentication and authorization     | 9098       |
+| **pgAdmin**            | PostgreSQL management UI             | 5050       |
+| **Zipkin**             | Distributed tracing                  | 9411       |
+| **MongoDB**            | NoSQL database for notifications     | 27017      |
+| **Mongo Express**      | MongoDB management UI                | 8081       |
+| **Zookeeper**          | Kafka coordination                   | 22181      |
+| **Kafka**              | Message broker                       | 9092       |
+| **Maildev**            | Email testing server                 | 1080, 1025 |
 ```
 ---
 ## Environment Variables
