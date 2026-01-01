@@ -1,6 +1,6 @@
-# Online Banking Microservices API
+# Banking Microservices API
 
-A modern, scalable online banking system built using a microservices architecture with **Java**, **Spring Boot**, **Apache Kafka**, **PostgreSQL**, **JPA/Hibernate**, **Docker**, and more. This project demonstrates a modular, event-driven banking application with services for account management, transactions, loans, notifications, and authentication.
+A production-ready online banking system built with Spring Boot microservices architecture, featuring event-driven communication via Kafka, JWT authentication, service discovery, API gateway, and distributed tracing. This project demonstrates enterprise-grade banking services with modular design for account management, transactions, loans, notifications, and secure authentication.
 
 ![Image](https://github.com/user-attachments/assets/29e57f8d-6344-42cd-892b-de8f6235b590)
 
@@ -43,19 +43,16 @@ A modern, scalable online banking system built using a microservices architectur
 ## Prerequisites
 - **Docker**: Version 20.10 or higher
 - **Docker Compose**: Version 1.29 or higher
-- **Java**: JDK 17 (for local development)
-- **Maven**: For building Spring Boot services
+- **Java**: JDK 21 (for local development)
+- **Maven**: 3.6+ for building Spring Boot services
 - **Git**: To clone the repository
-- **Containerization**: Docker, Docker Compose
-- **Monitoring**: pgAdmin, Mongo Express
-- **Email Testing**: Maildev
 
 ----
 ## Setup and Installation
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-username/online-banking-microservices-api.git
-   cd online-banking-microservices-api
+   git clone https://github.com/felixmarvindev/banking-microservices-api.git
+   cd banking-microservices-api
    ```
 2. **Build the Project (optional, if running locally without Docker):**
   ```bash
