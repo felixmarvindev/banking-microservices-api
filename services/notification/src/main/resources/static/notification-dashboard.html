@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Service Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background: #4caf50;
+        }
+
+        .status-indicator.disconnected {
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-card .label {
+            color: #999;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section h2 {
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .events-feed {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .event-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .event-item.processed {
+            border-left-color: #4caf50;
+        }
+
+        .event-item.failed {
+            border-left-color: #f44336;
+        }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .event-type {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .event-time {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .event-topic {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+
+        .notifications-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .notifications-table th,
+        .notifications-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .notifications-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .notifications-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-badge.sent {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-badge.pending {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .status-badge.failed {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .test-form {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .kafka-status {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+
+        .kafka-status-info {
+            margin-left: 15px;
+        }
+
+        .kafka-status-info strong {
+            color: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📧 Notification Service Dashboard</h1>
+            <p>
+                <span class="status-indicator" id="connectionStatus"></span>
+                <span id="connectionText">Connecting...</span>
+            </p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Notifications</h3>
+                <div class="value" id="totalNotifications">0</div>
+                <div class="label">All time</div>
+            </div>
+            <div class="stat-card">
+                <h3>Success Rate</h3>
+                <div class="value" id="successRate">0%</div>
+                <div class="label">Sent successfully</div>
+            </div>
+            <div class="stat-card">
+                <h3>Sent</h3>
+                <div class="value" id="sentCount">0</div>
+                <div class="label">Successfully delivered</div>
+            </div>
+            <div class="stat-card">
+                <h3>Failed</h3>
+                <div class="value" id="failedCount">0</div>
+                <div class="label">Delivery failed</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pending</h3>
+                <div class="value" id="pendingCount">0</div>
+                <div class="label">In queue</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="section">
+                <h2>📨 Real-time Kafka Events</h2>
+                <div class="kafka-status" id="kafkaStatus">
+                    <div class="loading">Loading Kafka status...</div>
+                </div>
+                <div class="events-feed" id="eventsFeed">
+                    <div class="loading">Waiting for events...</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📋 Recent Notifications</h2>
+                <div id="notificationsTable">
+                    <div class="loading">Loading notifications...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-form">
+            <h2>🧪 Test Notification</h2>
+            <form id="testForm">
+                <div class="form-group">
+                    <label for="testEmail">Email Address</label>
+                    <input type="email" id="testEmail" name="email" required 
+                           placeholder="test@example.com" value="test@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="testSubject">Subject</label>
+                    <input type="text" id="testSubject" name="subject" required 
+                           placeholder="Test Notification" value="Test Notification">
+                </div>
+                <div class="form-group">
+                    <label for="testMessage">Message</label>
+                    <textarea id="testMessage" name="message" required 
+                              placeholder="This is a test notification message">This is a test notification from the dashboard.</textarea>
+                </div>
+                <button type="submit" class="btn" id="testBtn">Send Test Notification</button>
+            </form>
+        </div>
+
+        <div class="test-form" style="margin-top: 30px;">
+            <h2>🚀 Trigger Kafka Events</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h3 style="margin-bottom: 15px; color: #667eea;">Transaction Event</h3>
+                    <form id="transactionEventForm">
+                        <div class="form-group">
+                            <label>Transaction Reference</label>
+                            <input type="text" id="txnRef" required value="TXN-TEST-001">
+                        </div>
+                        <div class="form-group">
+                            <label>Source Account ID</label>
+                            <input type="number" id="sourceAccountId" required value="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Destination Account ID</label>
+                            <input type="number" id="destAccountId" required value="2">
+                        </div>
+                        <div class="form-group">
+                            <label>Amount</label>
+                            <input type="number" id="txnAmount" step="0.01" required value="100.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="txnType" required>
+                                <option value="TRANSFER">TRANSFER</option>
+                                <option value="DEPOSIT">DEPOSIT</option>
+                                <option value="WITHDRAWAL">WITHDRAWAL</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="txnStatus" required>
+                                <option value="COMPLETED">COMPLETED</option>
+                                <option value="PENDING">PENDING</option>
+                                <option value="FAILED">FAILED</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="txnDescription" value="Test transaction event">
+                        </div>
+                        <div class="form-group">
+                            <label>User ID</label>
+                            <input type="number" id="txnUserId" required value="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="txnEmail" required value="test@example.com">
+                        </div>
+                        <button type="submit" class="btn" id="txnBtn">Trigger Transaction Event</button>
+                    </form>
+                </div>
+
+                <div>
+                    <h3 style="margin-bottom: 15px; color: #667eea;">Account Event</h3>
+                    <form id="accountEventForm">
+                        <div class="form-group">
+                            <label>Event Type</label>
+                            <select id="accEventType" required>
+                                <option value="ACCOUNT_CREATED">ACCOUNT_CREATED</option>
+                                <option value="ACCOUNT_UPDATED">ACCOUNT_UPDATED</option>
+                                <option value="ACCOUNT_CLOSED">ACCOUNT_CLOSED</option>
+                                <option value="BALANCE_UPDATED">BALANCE_UPDATED</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Account Number</label>
+                            <input type="text" id="accNumber" required value="ACC-001">
+                        </div>
+                        <div class="form-group">
+                            <label>User ID</label>
+                            <input type="number" id="accUserId" required value="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Account Type</label>
+                            <select id="accType">
+                                <option value="SAVINGS">SAVINGS</option>
+                                <option value="CHECKING">CHECKING</option>
+                                <option value="BUSINESS">BUSINESS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Balance</label>
+                            <input type="number" id="accBalance" step="0.01" value="1000.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Currency</label>
+                            <input type="text" id="accCurrency" value="USD">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="accEmail" required value="test@example.com">
+                        </div>
+                        <button type="submit" class="btn" id="accBtn">Trigger Account Event</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1/notifications';
+        let eventSource = null;
+
+        // Initialize SSE connection
+        function initEventStream() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            eventSource = new EventSource(`${API_BASE}/events/stream`);
+            
+            eventSource.onopen = () => {
+                updateConnectionStatus(true);
+            };
+
+            eventSource.addEventListener('connected', (e) => {
+                console.log('Connected to event stream');
+            });
+
+            eventSource.addEventListener('kafka-event', (e) => {
+                const event = JSON.parse(e.data);
+                addEventToFeed(event);
+            });
+
+            eventSource.onerror = () => {
+                updateConnectionStatus(false);
+                setTimeout(initEventStream, 5000); // Reconnect after 5 seconds
+            };
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            const textEl = document.getElementById('connectionText');
+            
+            if (connected) {
+                statusEl.className = 'status-indicator connected';
+                textEl.textContent = 'Connected to event stream';
+            } else {
+                statusEl.className = 'status-indicator disconnected';
+                textEl.textContent = 'Disconnected - Reconnecting...';
+            }
+        }
+
+        function addEventToFeed(event) {
+            const feed = document.getElementById('eventsFeed');
+            
+            if (feed.querySelector('.loading')) {
+                feed.innerHTML = '';
+            }
+
+            const eventEl = document.createElement('div');
+            eventEl.className = `event-item ${event.processed ? 'processed' : 'failed'}`;
+            
+            const time = new Date(event.timestamp).toLocaleString();
+            
+            eventEl.innerHTML = `
+                <div class="event-header">
+                    <span class="event-type">${event.eventType}</span>
+                    <span class="event-time">${time}</span>
+                </div>
+                <div class="event-topic">${event.topic}</div>
+            `;
+            
+            feed.insertBefore(eventEl, feed.firstChild);
+            
+            // Keep only last 50 events visible
+            while (feed.children.length > 50) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        async function loadStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                const stats = await response.json();
+                
+                document.getElementById('totalNotifications').textContent = stats.totalNotifications || 0;
+                document.getElementById('successRate').textContent = 
+                    stats.successRate ? stats.successRate.toFixed(1) + '%' : '0%';
+                document.getElementById('sentCount').textContent = stats.sentCount || 0;
+                document.getElementById('failedCount').textContent = stats.failedCount || 0;
+                document.getElementById('pendingCount').textContent = stats.pendingCount || 0;
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        async function loadKafkaStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/kafka/status`);
+                const status = await response.json();
+                
+                const statusEl = document.getElementById('kafkaStatus');
+                const lastEvent = status.lastEventTime 
+                    ? new Date(status.lastEventTime).toLocaleString() 
+                    : 'Never';
+                
+                statusEl.innerHTML = `
+                    <span class="status-indicator ${status.isConnected ? 'connected' : 'disconnected'}"></span>
+                    <div class="kafka-status-info">
+                        <strong>Consumer Group:</strong> ${status.consumerGroup}<br>
+                        <strong>Topics:</strong> ${status.topics.join(', ')}<br>
+                        <strong>Last Event:</strong> ${lastEvent}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading Kafka status:', error);
+            }
+        }
+
+        async function loadNotifications() {
+            try {
+                const response = await fetch(`${API_BASE}?page=0&size=10`);
+                const data = await response.json();
+                
+                const tableEl = document.getElementById('notificationsTable');
+                
+                if (data.content.length === 0) {
+                    tableEl.innerHTML = '<div class="empty-state">No notifications yet</div>';
+                    return;
+                }
+                
+                let html = '<table class="notifications-table"><thead><tr>';
+                html += '<th>Email</th><th>Subject</th><th>Status</th><th>Sent At</th>';
+                html += '</tr></thead><tbody>';
+                
+                data.content.forEach(notif => {
+                    const time = new Date(notif.sentAt).toLocaleString();
+                    html += `
+                        <tr>
+                            <td>${notif.email}</td>
+                            <td>${notif.subject}</td>
+                            <td><span class="status-badge ${notif.status.toLowerCase()}">${notif.status}</span></td>
+                            <td>${time}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                tableEl.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('testBtn');
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+            
+            try {
+                const formData = {
+                    email: document.getElementById('testEmail').value,
+                    subject: document.getElementById('testSubject').value,
+                    message: document.getElementById('testMessage').value
+                };
+                
+                const response = await fetch(`${API_BASE}/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    alert('Test notification sent successfully!');
+                    loadStatistics();
+                    loadNotifications();
+                } else {
+                    const error = await response.json();
+                    alert('Failed to send test notification: ' + (error.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error sending test notification:', error);
+                alert('Error sending test notification');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Send Test Notification';
+            }
+        });
+
+        // Transaction Event Form Handler
+        document.getElementById('transactionEventForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('txnBtn');
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+            
+            try {
+                const formData = {
+                    transactionReference: document.getElementById('txnRef').value,
+                    sourceAccountId: parseInt(document.getElementById('sourceAccountId').value),
+                    destinationAccountId: parseInt(document.getElementById('destAccountId').value),
+                    amount: parseFloat(document.getElementById('txnAmount').value),
+                    type: document.getElementById('txnType').value,
+                    status: document.getElementById('txnStatus').value,
+                    description: document.getElementById('txnDescription').value,
+                    userId: parseInt(document.getElementById('txnUserId').value),
+                    email: document.getElementById('txnEmail').value
+                };
+                
+                const response = await fetch(`${API_BASE}/trigger/transaction`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert('Transaction event sent to Kafka successfully!');
+                    loadKafkaStatus();
+                } else {
+                    const error = await response.json();
+                    alert('Failed to trigger transaction event: ' + (error.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error triggering transaction event:', error);
+                alert('Error triggering transaction event');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Trigger Transaction Event';
+            }
+        });
+
+        // Account Event Form Handler
+        document.getElementById('accountEventForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('accBtn');
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+            
+            try {
+                const formData = {
+                    eventType: document.getElementById('accEventType').value,
+                    accountNumber: document.getElementById('accNumber').value,
+                    userId: parseInt(document.getElementById('accUserId').value),
+                    accountType: document.getElementById('accType').value,
+                    balance: parseFloat(document.getElementById('accBalance').value),
+                    currency: document.getElementById('accCurrency').value,
+                    email: document.getElementById('accEmail').value
+                };
+                
+                const response = await fetch(`${API_BASE}/trigger/account`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert('Account event sent to Kafka successfully!');
+                    loadKafkaStatus();
+                } else {
+                    const error = await response.json();
+                    alert('Failed to trigger account event: ' + (error.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error triggering account event:', error);
+                alert('Error triggering account event');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Trigger Account Event';
+            }
+        });
+
+        // Initial load
+        loadStatistics();
+        loadKafkaStatus();
+        loadNotifications();
+        initEventStream();
+
+        // Refresh statistics and notifications every 5 seconds
+        setInterval(() => {
+            loadStatistics();
+            loadNotifications();
+            loadKafkaStatus();
+        }, 5000);
+    </script>
+</body>
+</html>
+

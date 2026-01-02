@@ -4,12 +4,17 @@
 
 package com.example.notification.service;
 
+import com.example.notification.dto.KafkaEventDto;
 import com.example.notification.event.AccountEvent;
 import com.example.notification.event.TransactionEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +22,9 @@ import org.springframework.stereotype.Service;
 public class KafkaConsumerService {
 
     private final EmailService emailService;
+    private final EventTrackerService eventTrackerService;
+    private final EventBroadcasterService eventBroadcasterService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @KafkaListener(
         topics = "transaction-events",
@@ -24,6 +32,7 @@ public class KafkaConsumerService {
         containerFactory = "transactionKafkaListenerContainerFactory"
     )
     public void consumeTransactionEvent(TransactionEvent event) {
+        boolean processed = false;
         try {
             log.info("Received Transaction Event: {}", event);
 
@@ -53,9 +62,26 @@ public class KafkaConsumerService {
 
             log.info("event.getEmail(): {}, subject: {}, content: {}", event.getEmail(), subject, content);
 //            emailService.sendEmail(event.getEmail(), subject, content);
+            processed = true;
 
         } catch (Exception e) {
             log.error("Error processing transaction event: {}", event, e);
+        } finally {
+            // Update event tracking with final status and broadcast
+            try {
+                String eventData = objectMapper.writeValueAsString(event);
+                KafkaEventDto kafkaEvent = KafkaEventDto.builder()
+                        .eventType("TransactionEvent")
+                        .eventData(eventData)
+                        .timestamp(LocalDateTime.now())
+                        .topic("transaction-events")
+                        .processed(processed)
+                        .build();
+                eventTrackerService.trackEvent("TransactionEvent", eventData, "transaction-events", processed);
+                eventBroadcasterService.broadcastEvent(kafkaEvent);
+            } catch (JsonProcessingException e) {
+                log.warn("Failed to update event tracking status", e);
+            }
         }
     }
 
@@ -65,6 +91,7 @@ public class KafkaConsumerService {
         containerFactory = "accountKafkaListenerContainerFactory"
     )
     public void consumeAccountEvent(AccountEvent event) {
+        boolean processed = false;
         try {
             log.info("Received Account Event: {}", event);
 
@@ -97,10 +124,27 @@ public class KafkaConsumerService {
 
 //            emailService.sendEmail(event.getEmail(), subject, content);
             log.info("event.getEmail(): {}, subject: {}, content: {}", event.getEmail(), subject, content);
+            processed = true;
 
         } catch (Exception e) {
             log.error("Failed to process account event", e);
             throw e; // Re-throwing the exception
+        } finally {
+            // Update event tracking with final status and broadcast
+            try {
+                String eventData = objectMapper.writeValueAsString(event);
+                KafkaEventDto kafkaEvent = KafkaEventDto.builder()
+                        .eventType("AccountEvent")
+                        .eventData(eventData)
+                        .timestamp(LocalDateTime.now())
+                        .topic("account-events")
+                        .processed(processed)
+                        .build();
+                eventTrackerService.trackEvent("AccountEvent", eventData, "account-events", processed);
+                eventBroadcasterService.broadcastEvent(kafkaEvent);
+            } catch (JsonProcessingException e) {
+                log.warn("Failed to update event tracking status", e);
+            }
         }
     }
 }
