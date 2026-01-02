@@ -186,6 +186,37 @@ run_smoke_tests() {
   curl -sf http://localhost:8222/swagger-aggregator.html >/dev/null && print_success "Swagger OK"
 }
 
+
+# ---------------------------------------------------------------------------
+# Cleanup
+# ---------------------------------------------------------------------------
+cleanup() {
+  print_header "Cleaning Up"
+  $COMPOSE_CMD down
+  print_success "Cleanup complete"
+}
+
+
+# ---------------------------------------------------------------------------
+# Build Only
+# ---------------------------------------------------------------------------
+build_only() {
+  print_header "Building Services Only"
+  build_services
+  print_success "Build complete"
+}
+
+# ---------------------------------------------------------------------------
+# Check Healths
+# ---------------------------------------------------------------------------
+check_healths() {
+  print_header "Checking Healths"
+  check_service_health
+  print_success "Healths checked"
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Deploy flow
 # ---------------------------------------------------------------------------
@@ -221,6 +252,9 @@ case "${1:-}" in
     ;;
   --health-check)
     check_service_health
+    ;;
+  --build-only)
+    build_only
     ;;
   *)
     deploy

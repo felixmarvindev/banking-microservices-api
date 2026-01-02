@@ -15,7 +15,7 @@ spring:
   main:
     allow-bean-definition-overriding: true
   datasource:
-    url: jdbc:postgresql://localhost:5432/notification
+    url: jdbc:postgresql://postgresql:5432/notification
     username: postgres
     password: admin@123
     driver-class-name: org.postgresql.Driver
@@ -48,7 +48,7 @@ spring:
           writetimeout: 5000
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
 
     consumer:
       group-id: notification-group
@@ -62,3 +62,12 @@ spring:
     topics:
       transaction-events: transaction-events
       account-events: account-events
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
