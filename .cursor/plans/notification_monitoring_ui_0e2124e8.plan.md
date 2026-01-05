@@ -51,8 +51,6 @@ flowchart TD
     F -->|Broadcast| H
 ```
 
-
-
 ## Implementation Plan
 
 ### 1. Create DTOs for API Responses

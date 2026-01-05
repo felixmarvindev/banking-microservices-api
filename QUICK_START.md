@@ -64,3 +64,6 @@ Swagger UI endpoints:
 - `/loan-service/swagger-ui/index.html`
 - `/notification-service/swagger-ui/index.html`
 
+
+
+
